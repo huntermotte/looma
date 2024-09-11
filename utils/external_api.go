@@ -10,7 +10,7 @@ type Task struct {
     Task      string    `json:"task"`
 }
 
-// MockExternalAPI is a mock function that returns tasks for a specific user in sorted order
+// Mock function that returns tasks for a specific user in sorted order
 func FetchRecentTasks(userID int, limit int) ([]Task, error) {
     // Mock tasks with different timestamps and user IDs
     mockTasks := []Task{
@@ -33,11 +33,9 @@ func FetchRecentTasks(userID int, limit int) ([]Task, error) {
         }
     }
 
-    // Sort by timestamp in ascending order (this is already sorted in this case)
-    // Return only the most recent tasks up to the specified limit
+    // Sort tasks by timestamp in ascending order (already sorted in this case)
     if len(userTasks) > limit {
         return userTasks[len(userTasks)-limit:], nil
     }
-
     return userTasks, nil
 }

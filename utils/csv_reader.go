@@ -41,13 +41,14 @@ func ReadRecentNotes(userID int, limit int) ([]Note, error) {
         }
     }
 
+    // Sort notes by timestamp (this should be ascending already)
     sort.Slice(notes, func(i, j int) bool {
         return notes[i].Timestamp.Before(notes[j].Timestamp)
     })
 
+    // Return only the most recent 'limit' notes
     if len(notes) > limit {
         return notes[len(notes)-limit:], nil
     }
-
     return notes, nil
 }
