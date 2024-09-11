@@ -18,7 +18,7 @@ func main() {
     models.InitDB()
     models.GenerateUsers(numUsers) // Insert sample users, using configurable number
     utils.CreateNotesFile(numNotes, numUsers)
-    utils.GenerateTasks(numTasks, numUsers)
+    models.GenerateTasks(numTasks, numUsers)
 
     elapsed := time.Since(start)
     log.Println("Data setup complete in", elapsed)
@@ -26,6 +26,9 @@ func main() {
     router := gin.Default()
 
     router.GET("/user/:user_id/recent", handlers.GetUserRecentTasksAndNotes)
+
+    // External API endpoint for streaming tasks
+    router.GET("/external/tasks/stream", handlers.StreamTasks)
 
     router.Run(":8080")
 }

@@ -52,7 +52,7 @@ func GetUserRecentTasksAndNotes(c *gin.Context) {
     }()
 
     go func() {
-        tasks, err := utils.FetchRecentTasks(ctx, userID, limit)
+        tasks, err := utils.StreamTasksFromAPI(c.Request.Context(), userID, limit)
         if err != nil {
             errChan <- err
         } else {

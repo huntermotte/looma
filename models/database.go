@@ -18,13 +18,26 @@ func InitDB() {
         log.Fatal(err)
     }
 
-    createTable := `
+    createUsersTable := `
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL
         );
     `
-    _, err = DB.Exec(createTable)
+    _, err = DB.Exec(createUsersTable)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    createTasksTable := `
+        CREATE TABLE IF NOT EXISTS tasks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            task TEXT NOT NULL,
+            timestamp INTEGER NOT NULL
+        );
+        `
+    _, err = DB.Exec(createTasksTable)
     if err != nil {
         log.Fatal(err)
     }
@@ -54,4 +67,38 @@ func GenerateUsers(numUsers int) {
     }
 
     fmt.Printf("Generated %d users in the database\n", numUsers)
+}
+
+// GenerateTasks generates tasks for random users and stores them in the database.
+func GenerateTasks(numTasks int, numUsers int) {
+    stmt, err := DB.Prepare("INSERT INTO tasks (user_id, task, timestamp) VALUES (?, ?, ?)")
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer stmt.Close()
+
+    rand.Seed(time.Now().UnixNano())
+
+    for i := 0; i < numTasks; i++ {
+        // Random user ID between 1 and numUsers
+        userID := rand.Intn(numUsers) + 1
+
+        // Random timestamp in microseconds
+        timestamp := time.Now().Add(time.Duration(i) * time.Second).UnixMicro()
+
+        // Generate the task description
+        taskDescription := fmt.Sprintf("Task %d", i+1)
+
+        // Insert task into the database
+        _, err = stmt.Exec(userID, taskDescription, timestamp)
+        if err != nil {
+            log.Fatal(err)
+        }
+
+        if i%1000 == 0 {
+            log.Printf("Inserted %d tasks\n", i+1)
+        }
+    }
+
+    log.Printf("Successfully inserted %d tasks into the database\n", numTasks)
 }
