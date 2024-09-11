@@ -1,14 +1,20 @@
 package handlers
 
 import (
+    "context"
     "net/http"
     "strconv"
+    "time"
     "gin/models"
     "gin/utils"
     "github.com/gin-gonic/gin"
 )
 
 func GetUserRecentTasksAndNotes(c *gin.Context) {
+    // Create a context with cancellation to handle client disconnects
+    ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
+    defer cancel()
+
     // Get user_id from the URL parameters
     userID, err := strconv.Atoi(c.Param("user_id"))
     if err != nil {
@@ -30,21 +36,50 @@ func GetUserRecentTasksAndNotes(c *gin.Context) {
         return
     }
 
-    // Fetch recent notes for the user
-    notes, err := utils.ReadRecentNotes(userID, limit)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read notes"})
-        return
+    // Channels to receive results from concurrent goroutines
+    notesChan := make(chan []utils.Note, 1)
+    tasksChan := make(chan []utils.Task, 1)
+    errChan := make(chan error, 2)
+
+    // Start fetching tasks and notes concurrently using goroutines
+    go func() {
+        notes, err := utils.ReadRecentNotes(ctx, userID, limit)
+        if err != nil {
+            errChan <- err
+        } else {
+            notesChan <- notes
+        }
+    }()
+
+    go func() {
+        tasks, err := utils.FetchRecentTasks(ctx, userID, limit)
+        if err != nil {
+            errChan <- err
+        } else {
+            tasksChan <- tasks
+        }
+    }()
+
+    // Wait for tasks and notes, or handle errors
+    var notes []utils.Note
+    var tasks []utils.Task
+
+    for i := 0; i < 2; i++ {
+        select {
+        case <-ctx.Done():
+            c.JSON(http.StatusRequestTimeout, gin.H{"error": "Request canceled by client"})
+            return
+        case err := <-errChan:
+            c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching data", "details": err.Error()})
+            return
+        case fetchedNotes := <-notesChan:
+            notes = fetchedNotes
+        case fetchedTasks := <-tasksChan:
+            tasks = fetchedTasks
+        }
     }
 
-    // Fetch recent tasks for the user
-    tasks, err := utils.FetchRecentTasks(userID, limit)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch tasks"})
-        return
-    }
-
-    // Return the response
+    // Return the combined result
     c.JSON(http.StatusOK, gin.H{
         "user_id":   user.ID,
         "user_name": user.Name,

@@ -1,6 +1,7 @@
 package utils
 
 import (
+    "context"
     "encoding/csv"
     "os"
     "sort"
@@ -14,7 +15,7 @@ type Note struct {
     Note      string    `json:"note"`
 }
 
-func ReadRecentNotes(userID int, limit int) ([]Note, error) {
+func ReadRecentNotes(ctx context.Context, userID int, limit int) ([]Note, error) {
     file, err := os.Open("notes.csv")
     if err != nil {
         return nil, err
@@ -29,6 +30,12 @@ func ReadRecentNotes(userID int, limit int) ([]Note, error) {
 
     var notes []Note
     for _, record := range records {
+        select {
+        case <-ctx.Done():
+            return nil, ctx.Err() // Handle context cancellation
+        default:
+        }
+
         userIDCsv, _ := strconv.Atoi(record[1])
         if userIDCsv == userID {
             timestamp, _ := strconv.ParseInt(record[0], 10, 64)

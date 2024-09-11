@@ -1,6 +1,7 @@
 package utils
 
 import (
+    "context"
     "time"
 )
 
@@ -11,7 +12,7 @@ type Task struct {
 }
 
 // Mock function that returns tasks for a specific user in sorted order
-func FetchRecentTasks(userID int, limit int) ([]Task, error) {
+func FetchRecentTasks(ctx context.Context, userID int, limit int) ([]Task, error) {
     // Mock tasks with different timestamps and user IDs
     mockTasks := []Task{
         {Timestamp: time.UnixMicro(1694083200000000), UserID: 1, Task: "Submit code review"},
@@ -28,6 +29,12 @@ func FetchRecentTasks(userID int, limit int) ([]Task, error) {
 
     var userTasks []Task
     for _, task := range mockTasks {
+        select {
+        case <-ctx.Done():
+            return nil, ctx.Err() // Handle context cancellation
+        default:
+        }
+
         if task.UserID == userID {
             userTasks = append(userTasks, task)
         }
