@@ -1,6 +1,8 @@
 package utils
 
 import (
+    "fmt"
+    "math/rand"
     "context"
     "encoding/csv"
     "os"
@@ -13,6 +15,39 @@ type Note struct {
     Timestamp time.Time `json:"timestamp"`
     UserID    int       `json:"user_id"`
     Note      string    `json:"note"`
+}
+
+func CreateNotesFile(numNotes int, numUsers int) {
+    // Open or create notes.csv file
+    file, err := os.Create("notes.csv")
+    if err != nil {
+        fmt.Println("Error creating file:", err)
+        return
+    }
+    defer file.Close()
+
+    // Set up random seed
+    rand.Seed(time.Now().UnixNano())
+
+    // Create CSV header
+    file.WriteString("timestamp,user_id,note\n")
+
+    // Generate rows with random data
+    for i := 0; i < numNotes; i++ {
+        // Generate random timestamp (in microseconds)
+        timestamp := time.Now().UnixMicro() + int64(rand.Intn(1000000))
+
+        // Generate random user_id between 1 and numUsers
+        userID := rand.Intn(numUsers) + 1
+
+        // Generate a random note
+        note := "This is note number " + strconv.Itoa(i+1)
+
+        // Write row to file
+        file.WriteString(fmt.Sprintf("%d,%d,%s\n", timestamp, userID, note))
+    }
+
+    fmt.Printf("Generated %d rows in notes.csv\n", numNotes)
 }
 
 func ReadRecentNotes(ctx context.Context, userID int, limit int) ([]Note, error) {

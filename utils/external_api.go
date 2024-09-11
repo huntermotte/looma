@@ -1,7 +1,10 @@
 package utils
 
 import (
+    "strconv"
+    "fmt"
     "context"
+    "math/rand"
     "time"
 )
 
@@ -11,38 +14,53 @@ type Task struct {
     Task      string    `json:"task"`
 }
 
-// Mock function that returns tasks for a specific user in sorted order
-func FetchRecentTasks(ctx context.Context, userID int, limit int) ([]Task, error) {
-    // Mock tasks with different timestamps and user IDs
-    mockTasks := []Task{
-        {Timestamp: time.UnixMicro(1694083200000000), UserID: 1, Task: "Submit code review"},
-        {Timestamp: time.UnixMicro(1694169600000000), UserID: 2, Task: "Update project timeline"},
-        {Timestamp: time.UnixMicro(1694256000000000), UserID: 3, Task: "Fix login bug"},
-        {Timestamp: time.UnixMicro(1694342400000000), UserID: 1, Task: "Prepare presentation"},
-        {Timestamp: time.UnixMicro(1694428800000000), UserID: 4, Task: "Deploy new version"},
-        {Timestamp: time.UnixMicro(1694515200000000), UserID: 2, Task: "Write test cases"},
-        {Timestamp: time.UnixMicro(1694601600000000), UserID: 3, Task: "Optimize database queries"},
-        {Timestamp: time.UnixMicro(1694688000000000), UserID: 4, Task: "Document new feature"},
-        {Timestamp: time.UnixMicro(1694774400000000), UserID: 1, Task: "Review team feedback"},
-        {Timestamp: time.UnixMicro(1694860800000000), UserID: 2, Task: "Update API documentation"},
-    }
+// In-memory task storage (for testing purposes)
+var Tasks []Task
 
-    var userTasks []Task
-    for _, task := range mockTasks {
-        select {
-        case <-ctx.Done():
-            return nil, ctx.Err() // Handle context cancellation
-        default:
+// GenerateTasks generates a specified number of tasks for random users.
+func GenerateTasks(numTasks int, numUsers int) {
+    // Clear existing tasks
+    Tasks = make([]Task, 0, numTasks)
+
+    rand.Seed(time.Now().UnixNano())
+
+    for i := 0; i < numTasks; i++ {
+        // Random user ID between 1 and numUsers
+        userID := rand.Intn(numUsers) + 1
+
+        // Random timestamp in microseconds
+        timestamp := time.Now().Add(time.Duration(i) * time.Second).UnixMicro()
+
+        // Create a new task with a simple description
+        task := Task{
+            Timestamp: time.UnixMicro(timestamp),
+            UserID:    userID,
+            Task:      "Task " + strconv.Itoa(i+1),
         }
 
+        // Add the task to the task list
+        Tasks = append(Tasks, task)
+    }
+
+    // Optionally log or print the number of tasks generated
+    fmt.Printf("Generated %d tasks for %d users\n", numTasks, numUsers)
+}
+
+// FetchRecentTasks returns recent tasks for the specified user from the in-memory task list.
+func FetchRecentTasks(ctx context.Context, userID int, limit int) ([]Task, error) {
+    var userTasks []Task
+
+    // Iterate through the in-memory list of tasks and find the tasks for the user
+    for _, task := range Tasks {
         if task.UserID == userID {
             userTasks = append(userTasks, task)
+
+            // Stop if we've reached the limit
+            if len(userTasks) == limit {
+                break
+            }
         }
     }
 
-    // Sort tasks by timestamp in ascending order (already sorted in this case)
-    if len(userTasks) > limit {
-        return userTasks[len(userTasks)-limit:], nil
-    }
     return userTasks, nil
 }

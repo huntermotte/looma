@@ -1,6 +1,9 @@
 package models
 
 import (
+    "fmt"
+    "math/rand"
+    "time"
     "database/sql"
     _ "github.com/mattn/go-sqlite3"
     "log"
@@ -27,21 +30,28 @@ func InitDB() {
     }
 }
 
-func AddSampleUsers() {
-    users := []User{
-        {Name: "Alice"},
-        {Name: "Bob"},
-        {Name: "Charlie"},
-        {Name: "Diana"},
+func GenerateUsers(numUsers int) {
+    // Prepare a statement for inserting users
+    stmt, err := DB.Prepare("INSERT INTO users (name) VALUES (?)")
+    if err != nil {
+        fmt.Println("Error preparing insert statement:", err)
+        return
     }
+    defer stmt.Close()
 
-    for _, user := range users {
-        query := `INSERT INTO users (name) VALUES (?)`
-        _, err := DB.Exec(query, user.Name)
+    // Set up random seed
+    rand.Seed(time.Now().UnixNano())
+
+    for i := 0; i < numUsers; i++ {
+        // Generate a random user name
+        userName := fmt.Sprintf("User%d", i+1)
+
+        // Insert the user into the database
+        _, err := stmt.Exec(userName)
         if err != nil {
-            log.Println("Error inserting user:", err)
-        } else {
-            log.Println("Inserted user:", user.Name)
+            fmt.Println("Error inserting user:", err)
         }
     }
+
+    fmt.Printf("Generated %d users in the database\n", numUsers)
 }
