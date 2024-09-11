@@ -94,10 +94,6 @@ func GenerateTasks(numTasks int, numUsers int) {
         if err != nil {
             log.Fatal(err)
         }
-
-        if i%1000 == 0 {
-            log.Printf("Inserted %d tasks\n", i+1)
-        }
     }
 
     log.Printf("Successfully inserted %d tasks into the database\n", numTasks)

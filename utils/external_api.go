@@ -13,9 +13,6 @@ type Task struct {
     Task      string    `json:"task"`
 }
 
-// In-memory task storage (for testing purposes)
-var Tasks []Task
-
 // StreamTasksFromAPI calls the external API to get a stream of tasks and filters by user_id.
 func StreamTasksFromAPI(ctx context.Context, userID int, limit int) ([]Task, error) {
     url := "http://localhost:8080/external/tasks/stream"
