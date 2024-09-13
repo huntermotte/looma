@@ -1,12 +1,13 @@
 package models
 
 import (
+    "database/sql"
     "fmt"
+    "log"
     "math/rand"
     "time"
-    "database/sql"
+
     _ "github.com/mattn/go-sqlite3"
-    "log"
 )
 
 var DB *sql.DB
@@ -18,6 +19,7 @@ func InitDB() {
         log.Fatal(err)
     }
 
+    // Create the users table if it doesn't exist
     createUsersTable := `
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -29,6 +31,7 @@ func InitDB() {
         log.Fatal(err)
     }
 
+    // Create the tasks table if it doesn't exist
     createTasksTable := `
         CREATE TABLE IF NOT EXISTS tasks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -36,11 +39,42 @@ func InitDB() {
             task TEXT NOT NULL,
             timestamp INTEGER NOT NULL
         );
-        `
+    `
     _, err = DB.Exec(createTasksTable)
     if err != nil {
         log.Fatal(err)
     }
+
+    // Clear out old data (delete all records from users and tasks tables)
+    ClearOldData()
+}
+
+// ClearOldData removes all records from the users and tasks tables and resets the auto-increment counter
+func ClearOldData() {
+    // Clear users table
+    _, err := DB.Exec("DELETE FROM users")
+    if err != nil {
+        log.Fatal("Failed to clear users table:", err)
+    }
+
+    // Clear tasks table
+    _, err = DB.Exec("DELETE FROM tasks")
+    if err != nil {
+        log.Fatal("Failed to clear tasks table:", err)
+    }
+
+    // Reset the auto-increment counter for users and tasks
+    _, err = DB.Exec("DELETE FROM sqlite_sequence WHERE name = 'users'")
+    if err != nil {
+        log.Fatal("Failed to reset user auto-increment counter:", err)
+    }
+
+    _, err = DB.Exec("DELETE FROM sqlite_sequence WHERE name = 'tasks'")
+    if err != nil {
+        log.Fatal("Failed to reset task auto-increment counter:", err)
+    }
+
+    fmt.Println("Old data cleared and auto-increment counters reset for users and tasks")
 }
 
 func GenerateUsers(numUsers int) {
