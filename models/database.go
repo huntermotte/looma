@@ -96,5 +96,5 @@ func GenerateTasks(numTasks int, numUsers int) {
         }
     }
 
-    log.Printf("Successfully inserted %d tasks into the database\n", numTasks)
+    fmt.Printf("Successfully inserted %d tasks into the database\n", numTasks)
 }
