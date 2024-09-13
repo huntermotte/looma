@@ -2,6 +2,9 @@
 
 ## Getting started
 
+Requirements:
+* The `Go` programming language: <a>https://go.dev</a>
+
 To start the server with default environment variables, run: `go mod tidy && go run main.go`
 
 Server should be running at `http://locahost:8080`
