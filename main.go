@@ -42,7 +42,7 @@ func main() {
 	models.GenerateTasks(numTasks, numUsers)
 
 	elapsed := time.Since(start)
-	fmt.Printf("Data setup complete in", elapsed)
+	log.Println("Data setup complete in", elapsed)
 
 	// Initialize the router
 	router := gin.Default()
